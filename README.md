@@ -1,1 +1,1 @@
-# golinkedin
+# go-linkedin
