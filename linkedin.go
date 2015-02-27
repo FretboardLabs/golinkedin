@@ -62,13 +62,15 @@ func CompleteAuth(w http.ResponseWriter, r *http.Request) (accessToken string, e
     return "", errors.New("API has not been initialized.")
   }
 
-  if !states[r.URL.Query()["state"][0]] {
+  queryValues := r.URL.Query()
+  if queryValues["state"] == nil || !states[queryValues["state"][0]] {
     return "", errors.New("State mismatch. Possible CSRF attack.")
   }
+  states[queryValues["state"][0]] = false
 
   res, err := http.Post(
     "https://www.linkedin.com/uas/oauth2/accessToken?grant_type=authorization_code&code=" +
-      r.URL.Query()["code"][0] + "&redirect_uri=" + api.callbackURL + "&client_id=" + api.apiKey +
+      queryValues["code"][0] + "&redirect_uri=" + api.callbackURL + "&client_id=" + api.apiKey +
       "&client_secret=" + api.apiSecret,
     "application/json",
     strings.NewReader(""))
