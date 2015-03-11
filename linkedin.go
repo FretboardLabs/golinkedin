@@ -90,6 +90,28 @@ func CompleteAuth(w http.ResponseWriter, r *http.Request) (accessToken string, e
   return accessToken, nil
 }
 
+func GetUser(w http.ResponseWriter, r *http.Request, accessToken string) (firstName string, lastName string, linkedinId string, err error) {
+  resp, err := http.Get("https://api.linkedin.com/v1/people/~?oauth2_access_token=" + accessToken + "&format=json")
+  if err != nil {
+    return "", "", "", err
+  }
+
+  body, err := ioutil.ReadAll(resp.Body)
+  var result map[string]interface{}
+  err = json.Unmarshal(body, &result)
+  if err != nil {
+    return "", "", "", err
+  }
+  firstName, _ = result["firstName"].(string)
+  lastName, _ = result["lastName"].(string)
+  linkedinId, _ = result["id"].(string)
+  if (len(firstName) == 0 || len(lastName) == 0 || len(linkedinId) == 0) {
+    return "", "", "", errors.New("error missing fields in login response")
+  } else {
+    return firstName, lastName, linkedinId, nil
+  }
+}
+
 /***********************
  * Helpers
  **********************/
