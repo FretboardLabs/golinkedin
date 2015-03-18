@@ -12,7 +12,6 @@ import (
   "errors"
   "io/ioutil"
   "encoding/json"
-  "fmt"
   "time"
 )
 
@@ -24,10 +23,10 @@ type LinkedInAPI struct {
 }
 
 type Position struct {
-  companyName string
-  jobTitle    string
-  startDate   time.Time
-  endDate     time.Time
+  CompanyName string
+  JobTitle    string
+  StartDate   time.Time
+  EndDate     time.Time
 }
 
 var api *LinkedInAPI = nil
@@ -144,17 +143,17 @@ func GetUserWorkHistory(w http.ResponseWriter, r *http.Request, accessToken stri
     return nil, err
   }
   positions := result["positions"].(map[string]interface{})["values"].([]interface{})
-  var userWorkHistory = make([]Position,len(values))
+  var userWorkHistory = make([]Position,len(positions))
   for index, _ := range positions {
     position := positions[index].(map[string]interface{})
     date := position["startDate"].(map[string]interface{})
     startDate := time.Date(int(date["year"].(float64)),time.Month(date["month"].(float64)), 0, 0, 0, 0, 0, time.UTC)
     date = position["endDate"].(map[string]interface{})
     endDate := time.Date(int(date["year"].(float64)), time.Month(date["month"].(float64)), 0, 0, 0, 0, 0, time.UTC)
-    newPosition := Position{companyName: position["company"].(map[string]interface{})["name"].(string),
-      jobTitle: position["title"].(string),
-      startDate: startDate,
-      endDate: endDate}
+    newPosition := Position{CompanyName: position["company"].(map[string]interface{})["name"].(string),
+      JobTitle: position["title"].(string),
+      StartDate: startDate,
+      EndDate: endDate}
     userWorkHistory[index] = newPosition
   }
   return userWorkHistory, nil
