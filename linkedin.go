@@ -122,7 +122,7 @@ func GetUser(w http.ResponseWriter, r *http.Request, accessToken string) (firstN
 
 func GetUserWorkHistory(w http.ResponseWriter, r *http.Request, accessToken string) (workHistory []Position, err error) {
   client := &http.Client{}
-  req, err := http.NewRequest("GET", "http://example.com", nil)
+  req, err := http.NewRequest("GET", "", nil)
   // prevent escape of parens
   req.URL = &url.URL{
     Scheme: "https",
