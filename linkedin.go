@@ -12,6 +12,8 @@ import (
   "errors"
   "io/ioutil"
   "encoding/json"
+  "fmt"
+  "time"
 )
 
 type LinkedInAPI struct {
@@ -19,6 +21,13 @@ type LinkedInAPI struct {
   apiSecret   string
   callbackURL string
   scope       []string
+}
+
+type Position struct {
+  companyName string
+  jobTitle    string
+  startDate   time.Time
+  endDate     time.Time
 }
 
 var api *LinkedInAPI = nil
@@ -110,6 +119,45 @@ func GetUser(w http.ResponseWriter, r *http.Request, accessToken string) (firstN
   } else {
     return firstName, lastName, linkedinId, nil
   }
+}
+
+func GetUserWorkHistory(w http.ResponseWriter, r *http.Request, accessToken string) (workHistory []Position, err error) {
+  client := &http.Client{}
+  req, err := http.NewRequest("GET", "http://example.com", nil)
+  // prevent escape of parens
+  req.URL = &url.URL{
+    Scheme: "https",
+    Host:   "linkedin.com",
+    Opaque: "//api.linkedin.com/v1/people/~:(positions)?oauth2_access_token=" + accessToken + "&format=json",
+  }
+  resp, err := client.Do(req)
+  if err != nil {
+    return nil, err
+  }
+  body, err := ioutil.ReadAll(resp.Body)
+  if err != nil {
+    return nil, err
+  }
+  var result map[string]interface{}
+  err = json.Unmarshal(body, &result)
+  if err != nil {
+    return nil, err
+  }
+  positions := result["positions"].(map[string]interface{})["values"].([]interface{})
+  var userWorkHistory = make([]Position,len(values))
+  for index, _ := range positions {
+    position := positions[index].(map[string]interface{})
+    date := position["startDate"].(map[string]interface{})
+    startDate := time.Date(int(date["year"].(float64)),time.Month(date["month"].(float64)), 0, 0, 0, 0, 0, time.UTC)
+    date = position["endDate"].(map[string]interface{})
+    endDate := time.Date(int(date["year"].(float64)), time.Month(date["month"].(float64)), 0, 0, 0, 0, 0, time.UTC)
+    newPosition := Position{companyName: position["company"].(map[string]interface{})["name"].(string),
+      jobTitle: position["title"].(string),
+      startDate: startDate,
+      endDate: endDate}
+    userWorkHistory[index] = newPosition
+  }
+  return userWorkHistory, nil
 }
 
 /***********************
