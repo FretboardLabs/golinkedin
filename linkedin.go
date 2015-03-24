@@ -13,6 +13,7 @@ import (
   "io/ioutil"
   "encoding/json"
   "time"
+  "github.com/lib/pq"
 )
 
 type LinkedInAPI struct {
@@ -26,7 +27,7 @@ type Position struct {
   CompanyName string
   JobTitle    string
   StartDate   time.Time
-  EndDate     time.Time
+  EndDate     pq.NullTime
 }
 
 var api *LinkedInAPI = nil
@@ -124,36 +125,51 @@ func GetUserWorkHistory(w http.ResponseWriter, r *http.Request, accessToken stri
   client := &http.Client{}
   req, err := http.NewRequest("GET", "", nil)
   // prevent escape of parens
+
   req.URL = &url.URL{
     Scheme: "https",
     Host:   "linkedin.com",
     Opaque: "//api.linkedin.com/v1/people/~:(positions)?oauth2_access_token=" + accessToken + "&format=json",
   }
+
   resp, err := client.Do(req)
   if err != nil {
     return nil, err
   }
+
   body, err := ioutil.ReadAll(resp.Body)
   if err != nil {
     return nil, err
   }
+
   var result map[string]interface{}
   err = json.Unmarshal(body, &result)
   if err != nil {
     return nil, err
   }
+
   positions := result["positions"].(map[string]interface{})["values"].([]interface{})
   var userWorkHistory = make([]Position,len(positions))
   for index, _ := range positions {
     position := positions[index].(map[string]interface{})
+
+    // parse start and end dates
     date := position["startDate"].(map[string]interface{})
     startDate := time.Date(int(date["year"].(float64)),time.Month(date["month"].(float64)), 0, 0, 0, 0, 0, time.UTC)
-    date = position["endDate"].(map[string]interface{})
-    endDate := time.Date(int(date["year"].(float64)), time.Month(date["month"].(float64)), 0, 0, 0, 0, 0, time.UTC)
-    newPosition := Position{CompanyName: position["company"].(map[string]interface{})["name"].(string),
+
+    // end date is optional
+    endDate := pq.NullTime{ Time: time.Time{}, Valid: false }
+    if _, ok := position["endDate"]; ok {
+      date = position["endDate"].(map[string]interface{})
+      endDate.Time = time.Date(int(date["year"].(float64)), time.Month(date["month"].(float64)), 0, 0, 0, 0, 0, time.UTC)
+      endDate.Valid = true
+    }
+    newPosition := Position{
+      CompanyName: position["company"].(map[string]interface{})["name"].(string),
       JobTitle: position["title"].(string),
       StartDate: startDate,
-      EndDate: endDate}
+      EndDate: endDate,
+    }
     userWorkHistory[index] = newPosition
   }
   return userWorkHistory, nil
