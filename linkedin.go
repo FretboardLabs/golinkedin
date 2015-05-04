@@ -128,8 +128,8 @@ func GetUserWorkHistory(w http.ResponseWriter, r *http.Request, accessToken stri
 
   req.URL = &url.URL{
     Scheme: "https",
-    Host:   "",
-    Opaque: "//api.linkedin.com/v1/people/~:(positions)?oauth2_access_token=" + accessToken + "&format=json",
+    Host:   "api.linkedin.com",
+    Opaque: "/v1/people/~:(positions)?oauth2_access_token=" + accessToken + "&format=json",
   }
 
   resp, err := client.Do(req)
