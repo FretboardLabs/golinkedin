@@ -128,7 +128,7 @@ func GetUserWorkHistory(w http.ResponseWriter, r *http.Request, accessToken stri
 
   req.URL = &url.URL{
     Scheme: "https",
-    Host:   "linkedin.com",
+    Host:   "",
     Opaque: "//api.linkedin.com/v1/people/~:(positions)?oauth2_access_token=" + accessToken + "&format=json",
   }
 
